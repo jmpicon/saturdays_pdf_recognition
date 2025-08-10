@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop, development]
+  pull_request:
+    branches: [main, develop, development]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Install quality & security tools
+        run: |
+          pip install ruff black mypy pytest pytest-cov bandit safety
+      - name: Ruff linter
+        run: ruff .
+      - name: Black formatting check
+        run: black --check .
+      - name: MyPy static type check
+        run: mypy .
+      - name: Run tests with coverage
+        run: |
+          if [ -d tests ]; then pytest --cov=.; else echo "No tests directory"; fi
+      - name: Bandit security scan
+        run: bandit -r .
+      - name: Safety vulnerability check
+        run: |
+          if [ -f requirements.txt ]; then safety check --full-report --file=requirements.txt || true; fi
